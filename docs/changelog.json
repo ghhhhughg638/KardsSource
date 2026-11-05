@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.18.5",
+    "date": "2026-11-05",
+    "author": "Codex",
+    "title": {
+      "zh": "补齐随机流节点",
+      "en": "Add seeded random stream nodes"
+    },
+    "items": [
+      {
+        "zh": "常用 UE 节点库新增 Make/Break Random Stream，以及从同一随机流生成整数、浮点数、布尔值、单位向量和包围盒内随机点的节点，支持用种子复现随机结果。",
+        "en": "The common Unreal node library now includes Make/Break Random Stream and seeded integer, float, boolean, unit-vector and bounding-box point generation nodes, so random results can be reproduced from a seed."
+      }
+    ]
+  },
+  {
     "version": "2.18.4",
     "date": "2026-10-24",
     "author": "Claude",

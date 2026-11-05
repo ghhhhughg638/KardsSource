@@ -7,7 +7,7 @@
 - UE 风格的灰色网格、红色 Event、蓝色函数、绿色纯函数、灰色流程、青色 Cast 节点，以及类型对应的引脚颜色。
 - 中文显示名与原始英文并列，例如「事件 · 从手牌打出 / Event OnPlayedFromHand」。
 - 从本仓库 C++ 头文件生成 608 个原生函数、35 个类、216 个属性和 37 个枚举，保留源码链接。
-- 101 个常用 UE 基础节点：Branch、Sequence、DoOnce、Gate、ForLoop、ForEachLoop、Delay、IsValid、GetGameInstance、GetPlayerController、Actor 访问、数学、数组、变量与基本类型转换。
+- 111 个常用 UE 基础节点：Branch、Sequence、DoOnce、Gate、ForLoop、ForEachLoop、Delay、IsValid、GetGameInstance、GetPlayerController、Actor 访问、数学、数组、变量、基本类型转换与可复现随机流。
 - 为已知对象类型提供 Cast To，生成属性 Get / Set 节点，为非静态成员函数添加正确类型的 Target 引脚。
 - 节点拖拽、执行流与数据连线、相同类型检查、参数及枚举编辑。
 - 多事件图、节点注释、自定义节点、卡牌元数据、导航缩略图、画布缩放。

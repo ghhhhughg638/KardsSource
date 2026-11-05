@@ -414,6 +414,17 @@ ueBuiltins.push(
       fn("RandomFloatInRange", "范围内随机浮点", "Random Float in Range", [pin("Min", "float"), pin("Max", "float"), out("float")], { category: "random" }),
       fn("RandomBool", "随机布尔", "Random Bool", [out("bool")], { category: "random" }),
       fn("RandomBoolWithWeight", "按概率随机布尔", "Random Bool with Weight", [pin("Weight", "float"), out("bool")], { category: "random" }),
+      // Seeded randomness: the stream is a value that callers pass through and update.
+      fn("MakeRandomStream", "构造随机流", "Make Random Stream", [pin("InitialSeed", "int32", "in", "Initial Seed"), out("FRandomStream")], { category: "random" }),
+      pure("BreakRandomStream", "拆分随机流", [pin("InRandomStream", "FRandomStream", "in", "In Random Stream"), pin("InitialSeed", "int32", "out", "Initial Seed"), pin("Seed", "int32", "out")], { english: "Break Random Stream", category: "random" }),
+      fn("RandomIntegerFromStream", "从随机流取随机整数", "Random Integer from Stream", [pin("Stream", "FRandomStream"), pin("Max", "int32"), out("int32")], { category: "random" }),
+      fn("RandomIntegerInRangeFromStream", "从随机流取范围内随机整数", "Random Integer in Range from Stream", [pin("Stream", "FRandomStream"), pin("Min", "int32"), pin("Max", "int32"), out("int32")], { category: "random" }),
+      fn("RandomFloatFromStream", "从随机流取随机浮点", "Random Float from Stream", [pin("Stream", "FRandomStream"), out("float")], { category: "random" }),
+      fn("RandomFloatInRangeFromStream", "从随机流取范围内随机浮点", "Random Float in Range from Stream", [pin("Stream", "FRandomStream"), pin("Min", "float"), pin("Max", "float"), out("float")], { category: "random" }),
+      fn("RandomBoolFromStream", "从随机流取随机布尔", "Random Bool from Stream", [pin("Stream", "FRandomStream"), out("bool")], { category: "random" }),
+      fn("RandomBoolWithWeightFromStream", "从随机流按概率取随机布尔", "Random Bool with Weight from Stream", [pin("Stream", "FRandomStream"), pin("Weight", "float"), out("bool")], { category: "random" }),
+      fn("RandomUnitVectorFromStream", "从随机流取随机单位向量", "Random Unit Vector from Stream", [pin("Stream", "FRandomStream"), out("FVector")], { category: "random" }),
+      fn("RandomPointInBoundingBoxFromStream", "从随机流取包围盒内随机点", "Random Point in Bounding Box from Stream", [pin("Stream", "FRandomStream"), pin("Origin", "FVector"), pin("BoxExtent", "FVector", "in", "Box Extent"), out("FVector")], { category: "random" }),
       // vectors and rotators
       fn("Add_FVector", "向量加", "Add (Vector)", [pin("A", "FVector"), pin("B", "FVector"), out("FVector")]),
       fn("Subtract_FVector", "向量减", "Subtract (Vector)", [pin("A", "FVector"), pin("B", "FVector"), out("FVector")]),
