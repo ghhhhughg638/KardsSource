@@ -2716,27 +2716,37 @@ const readLocalClip = () => {
 // Return Nodes can be copied too (the original one is locked in place, copies are extra Return Nodes).
 const copyable = (n) =>
   (!n.definition.fixed || n.definition.bp?.type === "result") && n.definition.kind !== "customEvent";
-function copyNodes() {
-  const nodes = graph().nodes.filter(
-    (n) => selection.has(n.id) && copyable(n),
-  );
-  if (!nodes.length) return toast("先选中要复制的节点", true);
-  const text = JSON.stringify(nodeClip({ ...project, enums }, graph(), new Set(nodes.map((n) => n.id))));
+function copyNodes(selected = selection) {
+  const nodes = graph().nodes.filter((n) => selected.has(n.id) && copyable(n));
+  if (!nodes.length) { toast("先选中要复制的节点", true); return null; }
+  let clip, text;
   try {
+    clip = nodeClip({ ...project, enums }, graph(), new Set(nodes.map((n) => n.id)));
+    if (!clip.nodes.length) { toast("所选节点不能复制", true); return null; }
+    text = JSON.stringify(clip);
     localStorage.setItem(CLIP_KEY, text);
   } catch {
-    return toast("存储空间不足，无法复制", true);
+    toast("无法保存复制的节点，请检查浏览器存储空间", true);
+    return null;
   }
-  navigator.clipboard?.writeText(CLIP_TAG + text).catch(() => {});
+  try { navigator.clipboard?.writeText(CLIP_TAG + text).catch(() => {}); } catch { /* local clipboard is sufficient */ }
   pasteCount = 0;
   hintPaste();
-  toast(`已复制 ${nodes.length} 个节点`);
+  toast(`已复制 ${clip.nodes.length} 个节点`);
   updateSelectionStatus();
+  return new Set(clip.nodes.map((n) => n.id));
 }
 function cutNodes() {
-  const had = selection.size;
-  copyNodes();
-  if (had) deleteSelection();
+  // Fixed nodes (including function return nodes) cannot be removed. Copy and delete exactly the
+  // same eligible nodes, leaving non-copyable events and locked nodes untouched.
+  const eligible = new Set(graph().nodes.filter((n) => selection.has(n.id) && copyable(n) && !n.definition.fixed).map((n) => n.id));
+  if (!eligible.size) { toast("所选节点不能剪切", true); return; }
+  const copied = copyNodes(eligible);
+  if (!copied) return;
+  const skipped = selection.size - copied.size;
+  selection = copied;
+  deleteSelection();
+  toast(skipped ? `已剪切 ${copied.size} 个节点，${skipped} 个节点无法剪切，已保留` : `已剪切 ${copied.size} 个节点`);
 }
 function pasteNodes(text) {
   let data = null;
@@ -3756,9 +3766,9 @@ function setInspectorOpen(open) {
 }
 $("bar-details").onclick = () => setInspectorOpen(true);
 $("bar-duplicate").onclick = duplicate;
-$("bar-copy").onclick = copyNodes;
+$("bar-copy").onclick = () => copyNodes();
 $("bar-paste").onclick = pasteFromButton;
-$("copy-nodes").onclick = copyNodes;
+$("copy-nodes").onclick = () => copyNodes();
 $("paste-nodes").onclick = pasteFromButton;
 $("bar-delete").onclick = deleteSelection;
 $("toggle-library").onclick = () =>

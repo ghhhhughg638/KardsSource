@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.18.6",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "安全剪切蓝图节点",
+      "en": "Cut Blueprint nodes safely"
+    },
+    "items": [
+      {
+        "zh": "剪切只删除成功复制的可剪切节点；复制失败、固定节点和自定义事件都会保留。",
+        "en": "Cut removes only successfully copied, movable nodes; copying failures, fixed nodes, and custom events are preserved."
+      }
+    ]
+  },
+  {
     "version": "2.18.5",
     "date": "2026-11-05",
     "author": "Codex",
