@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.5",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "完善引脚操作菜单",
+      "en": "Improve the pin actions menu"
+    },
+    "items": [
+      {
+        "zh": "引脚右键菜单显示中英文名称、输入或输出方向以及连接数量，并补充英文操作说明。",
+        "en": "The pin context menu shows its Chinese and English names, direction and connection count, with English action labels."
+      }
+    ]
+  },
+  {
     "version": "2.19.4",
     "date": "2026-11-09",
     "author": "Codex",

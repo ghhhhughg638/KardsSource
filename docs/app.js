@@ -3314,8 +3314,12 @@ function openPinMenu(target) {
   const n = graph().nodes.find((n) => n.id === el.dataset.node), id = el.dataset.pin;
   if (!n) return false;
   const p = n.definition.pins.find((p) => p.id === id);
-  const connected = graph().edges.some((e) => e.from.node === n.id && e.from.pin === id || e.to.node === n.id && e.to.pin === id);
-  openModal(`引脚 · ${p.name}`, `<p>${esc(p.type)}</p><button id="pin-disconnect" class="secondary-button" ${connected ? "" : "disabled"}>断开此引脚的连线</button><button id="pin-remove" class="secondary-button" ${canRemoveDynamicPin(n.definition, id) ? "" : "disabled"}>删除引脚</button><p class="detail-description">可用撤销恢复引脚及连线。固定签名引脚不能删除。</p>`);
+  if (!p) return false;
+  const links = graph().edges.filter((e) => e.from.node === n.id && e.from.pin === id || e.to.node === n.id && e.to.pin === id).length;
+  const cn = translate(p.name), raw = pinEnglish(p);
+  const name = langMode === "en" ? raw : langMode === "zh" || cn === raw ? cn : `${cn} / ${raw}`;
+  const direction = p.direction === "in" ? bi2("输入", "Input") : bi2("输出", "Output");
+  openModal(name, `<p>${direction} · ${esc(p.type)} · ${bi2(`${links} 条连接`, `${links} connections`)}</p><button id="pin-disconnect" class="secondary-button" ${links ? "" : "disabled"}>${bi2("断开此引脚的连线", "Disconnect pin links")}</button><button id="pin-remove" class="secondary-button" ${canRemoveDynamicPin(n.definition, id) ? "" : "disabled"}>${bi2("删除引脚", "Remove pin")}</button><p class="detail-description">${bi2("可用撤销恢复引脚及连线。固定签名引脚不能删除。", "Undo restores the pin and links. Fixed signature pins cannot be removed.")}</p>`);
   $("pin-disconnect").onclick = () => { $("modal").close(); disconnectEndpoint({node:n.id,pin:id}); };
   $("pin-remove").onclick = () => { $("modal").close(); mutate(() => removeDynamicPin(graph(), n, id)); };
   return true;
