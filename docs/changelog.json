@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.4",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "修复 Esc 打断节点编辑",
+      "en": "Keep node edits intact when pressing Escape"
+    },
+    "items": [
+      {
+        "zh": "在输入框或弹窗中按 Esc 时不再清除画布选中状态，避免打断节点属性编辑。",
+        "en": "Pressing Escape in an editable field or dialog no longer clears the canvas selection and interrupts node property editing."
+      }
+    ]
+  },
+  {
     "version": "2.19.3",
     "date": "2026-11-09",
     "author": "Codex",

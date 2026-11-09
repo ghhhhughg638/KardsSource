@@ -3897,24 +3897,21 @@ $("modal").onclick = (e) => {
   }
 };
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !$("modal").open) {
-    setDrawer(false);
-    setInspectorOpen(false);
-  }
   const typing =
     /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) ||
     e.target.isContentEditable;
   if (e.key === "Escape") {
+    if ($("modal").open || typing) return;
+    setDrawer(false);
+    setInspectorOpen(false);
     if (drag?.type === "rewire") drag = null;
     pending = null;
     selection.clear();
     selectedEdge = null;
-    if (!$("modal").open) {
-      renderNodes();
-      renderInspector();
-      drawEdges();
-      updateSelectionStatus();
-    }
+    renderNodes();
+    renderInspector();
+    drawEdges();
+    updateSelectionStatus();
     return;
   }
   if ($("modal").open) return;
