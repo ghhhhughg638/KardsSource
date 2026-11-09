@@ -108,7 +108,7 @@ $("ref-reset-draft").onclick=()=>{
 function findReference(step=0) {
   const q=$("ref-find").value.trim().normalize("NFKC").toLowerCase(), g=graph();
   if (!g) { findMatches=[];findIndex=-1;$("ref-find-count").textContent=q?"正在加载 / Loading…":"";return; }
-  findMatches=q?g.nodes.filter(n=>`${nodeChinese(n.definition)} ${nodeEnglish(n.definition)} ${n.definition.signature||""} ${n.comment||""} ${n.definition.pins.map(p=>`${p.name} ${translate(p.name)} ${p.type}`).join(" ")}`.normalize("NFKC").toLowerCase().includes(q)):[];
+  findMatches=q?g.nodes.filter(n=>`${n.title||""} ${nodeChinese(n.definition)} ${nodeEnglish(n.definition)} ${n.definition.signature||""} ${n.comment||""} ${Object.values(n.values||{}).join(" ")} ${n.definition.pins.map(p=>`${p.name} ${translate(p.name)} ${p.type}`).join(" ")}`.normalize("NFKC").toLowerCase().includes(q)):[];
   if(!findMatches.length){findIndex=-1;$("ref-find-count").textContent=q?"0 / 0":"";return;}
   findIndex=step===0?0:(findIndex+step+findMatches.length)%findMatches.length;
   const n=findMatches[findIndex];$("ref-find-count").textContent=`${findIndex+1} / ${findMatches.length}`;refSelection=new Set([n.id]);paintSelection();focusNode(n.id);

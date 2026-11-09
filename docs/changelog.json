@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.2",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "按参数值查找节点",
+      "en": "Find nodes by parameter value"
+    },
+    "items": [
+      {
+        "zh": "编辑器和原版蓝图库的图内搜索支持查找节点中保存的参数值；原版蓝图库也支持查找自定义节点名称。",
+        "en": "Graph search can find saved node parameter values in both the editor and reference library; reference search also includes custom node titles."
+      }
+    ]
+  },
+  {
     "version": "2.19.1",
     "date": "2026-11-09",
     "author": "Codex",
