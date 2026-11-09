@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.3",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "用方向键微调节点位置",
+      "en": "Nudge nodes with arrow keys"
+    },
+    "items": [
+      {
+        "zh": "选中一个或多个节点后，可用方向键微调位置，按住 Shift 每次移动 10 个单位；支持撤销。",
+        "en": "Move selected nodes with the arrow keys, or hold Shift to move by 10 units. Movement can be undone."
+      }
+    ]
+  },
+  {
     "version": "2.19.2",
     "date": "2026-11-09",
     "author": "Codex",

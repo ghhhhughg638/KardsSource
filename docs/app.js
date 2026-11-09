@@ -3609,7 +3609,7 @@ function validate() {
 function help() {
   openModal(
     "设计你的下一张卡牌",
-    `<div class="help-grid"><span>添加节点</span><kbd>Tab / 右键</kbd><span>框选节点</span><kbd>拖动空白（白色框）</kbd><span>平移画布</span><kbd>空格 / 中键 / Alt + 拖动</kbd><span>缩放画布</span><kbd>滚轮 / ＋ −</kbd><span>适应所有节点</span><kbd>F</kbd><span>断开引脚连线</span><kbd>Alt + 单击引脚</kbd><span>重接已有连线</span><kbd>选中连线后拖动圆点</kbd><span>插入重定向节点</span><kbd>双击连线</kbd><span>查找节点</span><kbd>Ctrl / Cmd + F</kbd><span>多选节点</span><kbd>Shift + 单击 / 手机「多选」按钮</kbd><span>全选 / 复制 / 删除</span><kbd>Ctrl A / Ctrl D / Delete</kbd><span>撤销 / 重做</span><kbd>Ctrl Z / Ctrl Shift Z</kbd><span>保存到本地 / 导出文件</span><kbd>Ctrl S / Ctrl Shift S</kbd><span>取消连线 / 取消选择</span><kbd>Esc</kbd></div><p>从一个端口拖向另一个端口，或依次点击两个端口。只有类型相同的输出与输入可以连接。点击连线后按 Delete 可断开。</p><p>修改会自动保存在当前浏览器。使用「导出蓝图」获得文件；更换设备或清除浏览器数据前请先导出。支持 macOS 的 ⌘ 快捷键。</p><div class="format-note">format: "${FORMAT}"\nversion: ${VERSION}\ngraphs: [{ nodes, edges, view }]</div>`,
+    `<div class="help-grid"><span>添加节点</span><kbd>Tab / 右键</kbd><span>框选节点</span><kbd>拖动空白（白色框）</kbd><span>平移画布</span><kbd>空格 / 中键 / Alt + 拖动</kbd><span>缩放画布</span><kbd>滚轮 / ＋ −</kbd><span>适应所有节点</span><kbd>F</kbd><span>断开引脚连线</span><kbd>Alt + 单击引脚</kbd><span>重接已有连线</span><kbd>选中连线后拖动圆点</kbd><span>插入重定向节点</span><kbd>双击连线</kbd><span>查找节点</span><kbd>Ctrl / Cmd + F</kbd><span>多选节点</span><kbd>Shift + 单击 / 手机「多选」按钮</kbd><span>移动选中节点</span><kbd>方向键 / Shift + 方向键（快速）</kbd><span>全选 / 复制 / 删除</span><kbd>Ctrl A / Ctrl D / Delete</kbd><span>撤销 / 重做</span><kbd>Ctrl Z / Ctrl Shift Z</kbd><span>保存到本地 / 导出文件</span><kbd>Ctrl S / Ctrl Shift S</kbd><span>取消连线 / 取消选择</span><kbd>Esc</kbd></div><p>从一个端口拖向另一个端口，或依次点击两个端口。只有类型相同的输出与输入可以连接。点击连线后按 Delete 可断开。</p><p>修改会自动保存在当前浏览器。使用「导出蓝图」获得文件；更换设备或清除浏览器数据前请先导出。支持 macOS 的 ⌘ 快捷键。</p><div class="format-note">format: "${FORMAT}"\nversion: ${VERSION}\ngraphs: [{ nodes, edges, view }]</div>`,
   );
 }
 $("node-search").oninput = () => {
@@ -3929,6 +3929,19 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (typing) return;
+  const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (direction && selection.size && !mod && !e.altKey && !drag && !e.target.closest("button, a, [contenteditable]")) {
+    const nodes = graph().nodes.filter((node) => selection.has(node.id));
+    if (nodes.length) {
+      e.preventDefault();
+      if (!e.repeat) checkpoint();
+      const step = e.shiftKey ? 10 : 1;
+      for (const node of nodes) { node.x += direction[0] * step; node.y += direction[1] * step; }
+      render();
+      scheduleSave();
+    }
+    return;
+  }
   if (mod && e.key.toLowerCase() === "f") { e.preventDefault(); openGraphFind(); return; }
   if (e.key === " ") {
     e.preventDefault();
