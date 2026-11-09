@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.18.7",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "连线失败时保留重做记录",
+      "en": "Preserve redo history when a connection fails"
+    },
+    "items": [
+      {
+        "zh": "尝试连接不兼容的引脚或重复连线时，保留原图和重做记录；只有成功改变蓝图的连线会进入撤销历史。",
+        "en": "Invalid or duplicate connection attempts preserve the graph and redo history; only a successful change enters undo history."
+      }
+    ]
+  },
+  {
     "version": "2.18.6",
     "date": "2026-11-09",
     "author": "Codex",

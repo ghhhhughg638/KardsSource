@@ -305,8 +305,8 @@ function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(persist, 300);
 }
-function checkpoint() {
-  history.push(JSON.stringify(project));
+function checkpoint(snapshot = JSON.stringify(project)) {
+  history.push(snapshot);
   if (history.length > 70) history.shift();
   future = [];
 }
@@ -2865,15 +2865,23 @@ function duplicate() {
   });
 }
 function tryConnect(a, b) {
+  const snapshot = JSON.stringify(project);
   try {
-    checkpoint();
-    if (!connect(graph(), a, b)) history.pop();
-    syncDefinitions(project); // wildcard (array library) nodes take the element type of the wire
+    if (!connect(graph(), a, b)) {
+      pending = null;
+      renderNodes();
+      drawEdges();
+      updateSelectionStatus();
+      return;
+    }
+    syncDefinitions(project); // wildcard nodes take the element type of the wire
+    checkpoint(snapshot);
     pending = null;
     render();
     persist();
   } catch (e) {
-    history.pop();
+    // An unsuccessful attempt must preserve both the graph and redo history.
+    project = JSON.parse(snapshot);
     pending = null;
     renderNodes();
     drawEdges();
