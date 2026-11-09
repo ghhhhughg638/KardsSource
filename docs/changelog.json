@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.6",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "修复画布右键菜单",
+      "en": "Fix canvas context menus"
+    },
+    "items": [
+      {
+        "zh": "修复打开蓝图画布或引脚菜单时，浏览器右键菜单可能同时弹出的问题。",
+        "en": "Prevent the browser context menu from appearing when opening a canvas or pin menu."
+      }
+    ]
+  },
+  {
     "version": "2.19.5",
     "date": "2026-11-09",
     "author": "Codex",

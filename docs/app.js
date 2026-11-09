@@ -3016,11 +3016,21 @@ viewport.addEventListener("mousedown", (e) => {
 // Right mouse button: drag on empty canvas pans (hand cursor); a plain click still opens the node menu.
 let lastEdgeClick = null, ignoreCanvasDoubleClickUntil = 0;
 let rightDragged = false,
-  rightDownAt = 0;
+  rightDownAt = 0,
+  rightContextPending = false;
+// The application menu may open on pointerup before contextmenu is dispatched. In that case
+// the event can target the new modal rather than the canvas, so capture it at the document.
+document.addEventListener("contextmenu", (e) => {
+  if (!rightContextPending || Date.now() - rightDownAt > 1500) return;
+  rightContextPending = false;
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
 viewport.addEventListener("pointerdown", (e) => {
   if (e.button === 2) {
     rightDragged = false;
     rightDownAt = e.pointerType === "mouse" ? Date.now() : 0;
+    rightContextPending = !!rightDownAt && !e.target.closest(".minimap-wrap,.canvas-bottom,.selection-bar");
     if (
       settings.rightPan &&
       e.pointerType === "mouse" &&
@@ -3334,7 +3344,6 @@ viewport.addEventListener("contextmenu", (e) => {
 });
 window.addEventListener("pointerup", (e) => {
   if (e.button !== 2 || Date.now() - rightDownAt > 1500 || rightDragged) return;
-  rightDownAt = 0;
   const t = document.elementFromPoint(e.clientX, e.clientY);
   if (!t || !viewport.contains(t) || t.closest(".minimap-wrap,.canvas-bottom,.selection-bar")) return;
   if (openPinMenu(t)) return;
