@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.7",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "改善参数输入框右键操作",
+      "en": "Improve context menus in parameter inputs"
+    },
+    "items": [
+      {
+        "zh": "在画布内编辑参数时，输入框的右键保留浏览器复制、粘贴等文字操作，不再打开节点菜单。",
+        "en": "Right-clicking a parameter input keeps the browser text editing menu instead of opening the node picker."
+      }
+    ]
+  },
+  {
     "version": "2.19.6",
     "date": "2026-11-09",
     "author": "Codex",

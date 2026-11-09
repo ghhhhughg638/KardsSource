@@ -3029,6 +3029,11 @@ document.addEventListener("contextmenu", (e) => {
 viewport.addEventListener("pointerdown", (e) => {
   if (e.button === 2) {
     rightDragged = false;
+    if (e.target.closest("input,textarea,select,[contenteditable='true']")) {
+      rightDownAt = 0;
+      rightContextPending = false;
+      return;
+    }
     rightDownAt = e.pointerType === "mouse" ? Date.now() : 0;
     rightContextPending = !!rightDownAt && !e.target.closest(".minimap-wrap,.canvas-bottom,.selection-bar");
     if (
@@ -3335,7 +3340,7 @@ function openPinMenu(target) {
   return true;
 }
 viewport.addEventListener("contextmenu", (e) => {
-  if (e.target.closest(".minimap-wrap")) return;
+  if (e.target.closest(".minimap-wrap,input,textarea,select,[contenteditable='true']")) return;
   e.preventDefault();
   // A mouse right-click opens the menu on button release (below), once we know it was not a pan.
   if (Date.now() - rightDownAt < 1500) return;
@@ -3345,7 +3350,7 @@ viewport.addEventListener("contextmenu", (e) => {
 window.addEventListener("pointerup", (e) => {
   if (e.button !== 2 || Date.now() - rightDownAt > 1500 || rightDragged) return;
   const t = document.elementFromPoint(e.clientX, e.clientY);
-  if (!t || !viewport.contains(t) || t.closest(".minimap-wrap,.canvas-bottom,.selection-bar")) return;
+  if (!t || !viewport.contains(t) || t.closest(".minimap-wrap,.canvas-bottom,.selection-bar,input,textarea,select,[contenteditable='true']")) return;
   if (openPinMenu(t)) return;
   picker(worldPoint(e), pending);
 });
