@@ -378,6 +378,9 @@ export function resolveWildcards(graph) {
   resolveEnumSwitches(graph);
   const wilds = graph.nodes.filter((n) => Array.isArray(n.definition.wild));
   if (!wilds.length) return;
+  // Start from the declared templates each time. Otherwise a cycle of wildcard nodes can
+  // perpetuate a stale type after its last concrete connection has been removed.
+  for (const node of wilds) node.definition.pins = node.definition.wild.map((pin) => ({ ...pin }));
   const typeOf = (id, pin) =>
     graph.nodes.find((x) => x.id === id)?.definition.pins.find((p) => p.id === pin)?.type;
   const resolve = (n) => {

@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.18.9",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "修复数组节点类型残留",
+      "en": "Reset stale wildcard array types"
+    },
+    "items": [
+      {
+        "zh": "相互连接的通配数组节点在断开最后一个具体类型来源后，会重新恢复通配类型，可以连接其他类型的引脚。",
+        "en": "Connected wildcard array nodes return to wildcard types when their last concrete type source is disconnected, allowing a different type to be connected."
+      }
+    ]
+  },
+  {
     "version": "2.18.8",
     "date": "2026-11-09",
     "author": "Codex",
