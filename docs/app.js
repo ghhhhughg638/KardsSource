@@ -2677,12 +2677,14 @@ function drawMinimap(viewOnly = false) {
 }
 function deleteSelection() {
   if (!selection.size && !selectedEdge) return;
+  const doomed = new Set(
+    graph().nodes.filter((n) => selection.has(n.id) && !n.definition.fixed).map((n) => n.id),
+  );
+  if (!doomed.size && !graph().edges.some((edge) => edge.id === selectedEdge)) {
+    toast("所选节点不能删除", true);
+    return;
+  }
   mutate(() => {
-    const doomed = new Set(
-      graph()
-        .nodes.filter((n) => selection.has(n.id) && !n.definition.fixed)
-        .map((n) => n.id),
-    );
     graph().nodes = graph().nodes.filter((n) => !doomed.has(n.id));
     graph().edges = graph().edges.filter(
       (e) =>
@@ -2838,14 +2840,20 @@ async function pasteFromButton() {
 }
 function duplicate() {
   if (!selection.size) return;
+  const copied = graph().nodes.filter((n) =>
+    selection.has(n.id) && copyable(n) &&
+    (n.definition.bp?.type !== "result" || (graph().kind === "function" && !graph().pure)),
+  );
+  if (!copied.length) {
+    toast("所选节点不能复制", true);
+    return;
+  }
   mutate(() => {
-    const copied = graph().nodes.filter(
-        (n) => selection.has(n.id) && copyable(n),
-      ),
-      ids = new Map();
+    const ids = new Map();
     for (const n of copied) {
       const copy = clone(n);
       copy.id = uid();
+      if (copy.definition.bp?.type === "result") copy.definition = resultDefinition(graph(), true);
       copy.x += 40;
       copy.y += 40;
       ids.set(n.id, copy.id);

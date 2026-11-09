@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.18.8",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "修复返回节点复制与操作记录",
+      "en": "Fix Return Node duplication and history"
+    },
+    "items": [
+      {
+        "zh": "复制函数返回节点会创建可删除的额外返回节点；对不能删除或复制的节点执行操作时，保留重做记录。",
+        "en": "Duplicating a function Return Node creates a removable extra return; no-op delete or duplicate actions preserve redo history."
+      }
+    ]
+  },
+  {
     "version": "2.18.7",
     "date": "2026-11-09",
     "author": "Codex",
