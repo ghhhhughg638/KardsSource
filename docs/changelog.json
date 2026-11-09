@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.8",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "批量断开节点连线",
+      "en": "Break selected node links"
+    },
+    "items": [
+      {
+        "zh": "在节点详情中可以一次断开所选节点的所有连线，支持多选、显示连接数量并可撤销。",
+        "en": "Break all links attached to selected nodes from the inspector, with a link count and undo support."
+      }
+    ]
+  },
+  {
     "version": "2.19.7",
     "date": "2026-11-09",
     "author": "Codex",

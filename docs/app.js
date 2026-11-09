@@ -2384,7 +2384,8 @@ function renderInspector() {
       '<section class="detail-section"><h3 class="detail-heading">连接详情</h3><p class="detail-description">选中连线后，可按 Delete 删除。数据输入端口只接受一条连接，新的连接会替换原连接；执行输出只连向一处，但多个执行输出可以接到同一个执行输入。</p><button class="danger-button" id="delete-selection">删除连接</button></section>';
   } else if (n) {
     const d = n.definition;
-    body = `<section class="detail-section"><h3 class="detail-heading">节点 <span>${selection.size > 1 ? selection.size + " SELECTED" : "NODE"}</span></h3><span class="node-type-badge">${esc(kindLabels[nodeKind(d)] || "自定义")} / ${esc(d.class || "Custom")}</span>${field("显示名称", "title", n.title || nodeChinese(d))}<div class="field"><label class="detail-label">节点注释<textarea data-field="comment" placeholder="描述这段逻辑的意图…">${esc(n.comment)}</textarea></label></div><div class="field-grid">${field("位置 X", "x", n.x)}${field("位置 Y", "y", n.y)}</div></section><section class="detail-section"><h3 class="detail-heading">默认参数 <span>DEFAULTS</span></h3>`;
+    const linkCount = graph().edges.filter((e) => selection.has(e.from.node) || selection.has(e.to.node)).length;
+    body = `<section class="detail-section"><h3 class="detail-heading">节点 <span>${selection.size > 1 ? selection.size + " SELECTED" : "NODE"}</span></h3><span class="node-type-badge">${esc(kindLabels[nodeKind(d)] || "自定义")} / ${esc(d.class || "Custom")}</span>${field("显示名称", "title", n.title || nodeChinese(d))}<div class="field"><label class="detail-label">节点注释<textarea data-field="comment" placeholder="描述这段逻辑的意图…">${esc(n.comment)}</textarea></label></div><div class="field-grid">${field("位置 X", "x", n.x)}${field("位置 Y", "y", n.y)}</div><button class="secondary-button" id="disconnect-nodes" type="button" ${linkCount ? "" : "disabled"}>${bi2(`断开所选节点连线 (${linkCount})`, `Break selected node links (${linkCount})`)}</button><p class="detail-description">${bi2("保留节点，可用撤销恢复连线。", "Keeps the nodes; undo restores their links.")}</p></section><section class="detail-section"><h3 class="detail-heading">默认参数 <span>DEFAULTS</span></h3>`;
     const inputs = d.pins.filter(
       (p) =>
         p.type !== "exec" &&
@@ -2470,6 +2471,7 @@ function renderInspector() {
     );
   bindClassDefaults();
   if ($("delete-selection")) $("delete-selection").onclick = deleteSelection;
+  if ($("disconnect-nodes")) $("disconnect-nodes").onclick = disconnectSelectedNodes;
   if ($("duplicate")) $("duplicate").onclick = duplicate;
   if ($("graph-settings"))
     $("graph-settings").onclick = () => editGraph(project.activeGraph);
@@ -2679,6 +2681,12 @@ function drawMinimap(viewOnly = false) {
       )
       .join("") +
     `<rect x="${-v.x / v.zoom}" y="${-v.y / v.zoom}" width="${r.width / v.zoom}" height="${r.height / v.zoom}" fill="#dddddd" fill-opacity=".03" stroke="#c7c7c7" stroke-width="3"/>`;
+}
+function disconnectSelectedNodes() {
+  if (!selection.size || !graph().edges.some((e) => selection.has(e.from.node) || selection.has(e.to.node))) return;
+  mutate(() => {
+    graph().edges = graph().edges.filter((e) => !selection.has(e.from.node) && !selection.has(e.to.node));
+  });
 }
 function deleteSelection() {
   if (!selection.size && !selectedEdge) return;
