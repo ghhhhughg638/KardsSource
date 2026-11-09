@@ -106,8 +106,9 @@ $("ref-reset-draft").onclick=()=>{
   try {removeReferenceDraft(localStorage,card.id,$("ref-mode").value,sourceHash());draftBlocked=false;draftUnsaved=false;project=buildReferenceProject(card,library,{expanded:$("ref-mode").value==="expanded"});refSelection.clear();renderGraph();status("已恢复原版参考图，其他来源版本的旧副本仍然保留。");}catch(e){status(`恢复失败：${e.message}`,true);}
 };
 function findReference(step=0) {
-  const q=$("ref-find").value.trim().toLowerCase();
-  findMatches=q?graph().nodes.filter(n=>`${nodeChinese(n.definition)} ${nodeEnglish(n.definition)} ${n.definition.signature||""} ${n.comment||""}`.toLowerCase().includes(q)):[];
+  const q=$("ref-find").value.trim().normalize("NFKC").toLowerCase(), g=graph();
+  if (!g) { findMatches=[];findIndex=-1;$("ref-find-count").textContent=q?"正在加载 / Loading…":"";return; }
+  findMatches=q?g.nodes.filter(n=>`${nodeChinese(n.definition)} ${nodeEnglish(n.definition)} ${n.definition.signature||""} ${n.comment||""} ${n.definition.pins.map(p=>`${p.name} ${translate(p.name)} ${p.type}`).join(" ")}`.normalize("NFKC").toLowerCase().includes(q)):[];
   if(!findMatches.length){findIndex=-1;$("ref-find-count").textContent=q?"0 / 0":"";return;}
   findIndex=step===0?0:(findIndex+step+findMatches.length)%findMatches.length;
   const n=findMatches[findIndex];$("ref-find-count").textContent=`${findIndex+1} / ${findMatches.length}`;refSelection=new Set([n.id]);paintSelection();focusNode(n.id);

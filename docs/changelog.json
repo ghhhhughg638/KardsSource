@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.19.1",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "图内搜索支持引脚名和类型",
+      "en": "Find nodes by pin names and types"
+    },
+    "items": [
+      {
+        "zh": "编辑器与原版蓝图库的图内搜索支持中英文引脚名称和类型；蓝图库加载期间也可以提前输入搜索。",
+        "en": "Graph search now includes Chinese and English pin names and pin types, and searches can be entered while the reference library loads."
+      }
+    ]
+  },
+  {
     "version": "2.19.0",
     "date": "2026-11-09",
     "author": "Codex",
