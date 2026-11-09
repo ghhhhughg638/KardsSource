@@ -150,7 +150,7 @@
               ><strong id="graph-breadcrumb">事件图</strong>
             </div>
             <div class="canvas-tools">
-              <button id="arrange" title="整理节点布局并拆开重叠的节点">⁝⁝ <span class="zh">整理</span><span class="en">Arrange</span></button
+              <button id="graph-find" title="查找节点 / Find nodes (Ctrl+F)">⌕ <span class="zh">查找</span><span class="en">Find</span></button><select id="align-nodes" aria-label="对齐所选节点 / Align selected nodes"><option value="">对齐 / Align…</option><option value="startX">左对齐 / Left</option><option value="endX">右对齐 / Right</option><option value="startY">顶对齐 / Top</option><option value="endY">底对齐 / Bottom</option><option value="distributeX">水平分布 / Distribute horizontally</option><option value="distributeY">垂直分布 / Distribute vertically</option></select><button id="arrange" title="整理节点布局并拆开重叠的节点">⁝⁝ <span class="zh">整理</span><span class="en">Arrange</span></button
               ><button id="multi-toggle" title="多选模式:点节点选中/取消,拖空白处框选">☑ <span class="zh">多选</span><span class="en">Multi</span></button
               ><button id="toggle-library" title="工作区、蓝图列表与节点库">☰ 工作区</button
               ><button id="add-node" title="添加节点 (Tab)">＋ 添加节点</button
@@ -180,6 +180,7 @@
             <div id="world" class="world">
               <svg id="edges" class="edges" aria-label="节点连线"></svg>
               <div id="nodes"></div>
+              <svg id="edge-handles" class="edges" aria-label="拖动连线端点 / Reconnect wire"></svg>
             </div>
             <div class="canvas-watermark">
               KARDS<span>BLUEPRINT EDITOR</span>

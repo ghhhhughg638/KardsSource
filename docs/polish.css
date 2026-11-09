@@ -750,3 +750,10 @@ html.block-copy .node .pin-input { -webkit-user-select: text; user-select: text;
 .node.ue-slim .node-subtitle, .node.ue-slim .ref-node-note, .node.ue-slim .pin-en { display: none; }
 .node.ue-slim .node-head { padding-bottom: 4px; }
 .node.ue-slim .add-user-pin { width: auto; min-height: 0; height: 18px; margin: 2px 0 2px 8px; padding: 0 7px; font-size: 12px; line-height: 1; }
+/* Keep the enlarged graph toolbar reachable on narrow screens. */
+@media (max-width: 800px) {
+  .canvas-toolbar .canvas-tools { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; flex: 1 1 auto; }
+  .canvas-toolbar .canvas-tools > * { flex: 0 0 auto; }
+  #graph-find .zh, #graph-find .en { display: none; }
+  #align-nodes { max-width: 76px; }
+}

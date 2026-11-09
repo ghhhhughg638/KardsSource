@@ -24,6 +24,7 @@ export function setTypeHierarchy(classes = {}) {
 export const WILD = "$T";
 // "Switch on Enum" selection pin: accepts any enum, and takes that enum's type once one is chosen.
 export const WILD_ENUM = "$E";
+export const REROUTE_WILD = "$R";
 let enumTable = {};
 export function setEnumTable(enums = {}) {
   enumTable = enums;
@@ -31,6 +32,7 @@ export function setEnumTable(enums = {}) {
 const isTypedArray = (t) => /^TArray<.+>$/.test(t);
 export function compatible(a, b) {
   if (a === b) return true;
+  if (a === REROUTE_WILD || b === REROUTE_WILD) return true;
   if (a === WILD_ENUM || b === WILD_ENUM) {
     const other = a === WILD_ENUM ? b : a;
     return !!enumTable[other] || other === WILD_ENUM;
@@ -128,7 +130,7 @@ export function makeProject() {
 export function pinKind(type) {
   if (type === "exec") return "exec";
   if (enumTable[type]) return "enum";
-  if (type === WILD_ENUM) return "wildcard";
+  if (type === WILD_ENUM || type === REROUTE_WILD) return "wildcard";
   if (type.includes(WILD)) return type.startsWith("TArray<") ? "array" : "wildcard";
   if (type.startsWith("Delegate<")) return "delegate";
   if (type.includes("TArray") || type.includes("TSet")) return "array";
@@ -184,8 +186,9 @@ export function connect(graph, a, b) {
     return false;
   // A data input keeps one wire (the new one replaces it); an execution output leads to one place
   // (the new wire replaces it), but any number of execution outputs may share one execution input.
+  const executionWire = po.type === "exec" || (po.type === REROUTE_WILD && pi.type === "exec");
   graph.edges = graph.edges.filter((e) =>
-    po.type === "exec"
+    executionWire
       ? !(e.from.node === from.node && e.from.pin === from.pin)
       : !(e.to.node === to.node && e.to.pin === to.pin),
   );
@@ -374,17 +377,20 @@ function resolveEnumSwitches(graph) {
     ];
   }
 }
-export function resolveWildcards(graph) {
+export function resolveWildcards(graph, enumPass = 0) {
   resolveEnumSwitches(graph);
-  const wilds = graph.nodes.filter((n) => Array.isArray(n.definition.wild));
+  const wilds = graph.nodes.filter((n) => Array.isArray(n.definition.wild) || n.definition.reroute);
   if (!wilds.length) return;
   // Start from the declared templates each time. Otherwise a cycle of wildcard nodes can
   // perpetuate a stale type after its last concrete connection has been removed.
-  for (const node of wilds) node.definition.pins = node.definition.wild.map((pin) => ({ ...pin }));
+  for (const node of wilds) {
+    if (node.definition.reroute) node.definition.pins = node.definition.pins.map((pin) => ({ ...pin, type: REROUTE_WILD }));
+    else node.definition.pins = node.definition.wild.map((pin) => ({ ...pin }));
+  }
   const typeOf = (id, pin) =>
     graph.nodes.find((x) => x.id === id)?.definition.pins.find((p) => p.id === pin)?.type;
   const resolve = (n) => {
-    const template = n.definition.wild;
+    const template = n.definition.reroute ? n.definition.pins.map((p) => ({ ...p, type: REROUTE_WILD })) : n.definition.wild;
     let found = null;
     for (const e of graph.edges) {
       const mine = e.from.node === n.id ? e.from : e.to.node === n.id ? e.to : null;
@@ -392,18 +398,33 @@ export function resolveWildcards(graph) {
       const other = mine === e.from ? e.to : e.from,
         tpl = template.find((p) => p.id === mine.pin)?.type,
         theirs = typeOf(other.node, other.pin);
-      if (!tpl?.includes(WILD) || !theirs || theirs.includes(WILD)) continue;
+      if ((!tpl?.includes(WILD) && tpl !== REROUTE_WILD) || !theirs || theirs.includes(WILD) || theirs === REROUTE_WILD || theirs === WILD_ENUM) continue;
       const candidate = tpl.startsWith("TArray<") ? /^TArray<(.+)>$/.exec(theirs)?.[1] : theirs;
-      if (candidate && !/^T(Array|Set)</.test(candidate)) {
+      if (candidate && (n.definition.reroute || (candidate !== "exec" && !candidate.startsWith("Delegate<") && !/^T(Array|Set)</.test(candidate)))) {
         found = candidate;
         break;
       }
     }
-    const pins = template.map((p) => ({ ...p, type: p.type.split(WILD).join(found ?? WILD) }));
+    const pins = template.map((p) => ({ ...p, type: n.definition.reroute ? (found ?? REROUTE_WILD) : p.type.split(WILD).join(found ?? WILD) }));
     const same = pins.every((p, i) => p.type === n.definition.pins[i]?.type);
     if (!same) n.definition.pins = pins;
     return !same;
   };
   for (let pass = 0; pass <= wilds.length; pass++)
     if (!wilds.map(resolve).some(Boolean)) break;
+  // An enum can arrive through a reroute whose type was still unknown when the enum nodes
+  // were first built. Rebuild those nodes and propagate their newly created pins immediately.
+  const enumChanged = graph.nodes.some((n) => {
+    const d = n.definition;
+    if (!d.switchEnum && !d.selectEnum && !d.enumCompare) return false;
+    const selectors = d.selectEnum ? ["Index"] : d.enumCompare ? ["A", "B"] : ["Selection"];
+    let wired = null;
+    for (const edge of graph.edges) {
+      if (edge.to.node !== n.id || !selectors.includes(edge.to.pin)) continue;
+      const value = typeOf(edge.from.node, edge.from.pin);
+      if (value && enumTable[value]) wired = value;
+    }
+    return !!wired && d.enumType !== wired;
+  });
+  if (enumChanged && enumPass < graph.nodes.length) resolveWildcards(graph, enumPass + 1);
 }

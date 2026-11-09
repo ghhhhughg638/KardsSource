@@ -1,5 +1,28 @@
 [
   {
+    "version": "2.19.0",
+    "date": "2026-11-09",
+    "author": "Codex",
+    "title": {
+      "zh": "蓝图连线、节点布局与原版蓝图库全面升级",
+      "en": "Blueprint connections, node layout and reference library upgrade"
+    },
+    "items": [
+      {
+        "zh": "Alt 单击引脚断开连线，选中连线后拖动圆点重接；双击连线插入会自动匹配执行或数据类型的重定向节点。",
+        "en": "Alt-click a pin to disconnect; select a wire and drag its handles to reconnect, or double-click a wire to insert a type-aware reroute node."
+      },
+      {
+        "zh": "多选节点可对齐和均匀分布；编辑器与原版蓝图库支持图内中英文节点搜索和逐项定位。",
+        "en": "Align or distribute selected nodes and search or navigate graph nodes in both the editor and reference viewer."
+      },
+      {
+        "zh": "原版蓝图参考副本按卡牌和显示模式自动保存在浏览器，支持恢复原版、导出旧副本和触屏框选；源数据发生变化时保留旧副本。",
+        "en": "Reference drafts are saved per card and view mode, with reset, old-draft export and touch box selection; older-source drafts are preserved."
+      }
+    ]
+  },
+  {
     "version": "2.18.9",
     "date": "2026-11-09",
     "author": "Codex",

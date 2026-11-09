@@ -755,7 +755,7 @@ export function buildExport(project, context = {}) {
   const { classes = {}, enums = {}, exportedAt = new Date().toISOString() } = context;
   const typeMentions = new Set();
   const noteType = (t) => {
-    if (!t || t === "exec" || t.includes("$T")) return;
+    if (!t || t === "exec" || t.includes("$")) return;
     const inner = elementType(t);
     typeMentions.add(inner.replace(/\*$/, ""));
   };

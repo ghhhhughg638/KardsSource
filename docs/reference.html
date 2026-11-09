@@ -39,20 +39,20 @@
             <button id="ref-select-all" class="ref-button" type="button">全选节点</button>
             <button id="ref-multi" class="ref-button" type="button" aria-pressed="false">☑ 多选</button>
             <button id="ref-paste-editor" class="ref-button ref-primary" type="button" disabled>粘贴到当前编辑器</button>
-            <button id="ref-info" class="ref-button" type="button">卡牌信息</button>
+            <button id="ref-info" class="ref-button" type="button">卡牌信息</button><button id="ref-reset-draft" class="ref-button" type="button" title="清除当前卡牌参考副本">恢复原版 / Reset</button><select id="ref-draft-history" class="ref-button" aria-label="选择旧参考副本 / Choose previous reference draft" hidden></select><button id="ref-export-draft" class="ref-button" type="button" hidden>导出旧副本 / Export previous</button>
             <button id="ref-copy" class="ref-button ref-primary" type="button" disabled>整张蓝图另存</button>
             <button id="ref-export" class="ref-button" type="button" disabled>导出参考蓝图</button>
           </div>
         </div>
         <div class="ref-canvas-wrap">
           <div id="ref-viewport" class="ref-viewport" tabindex="0" aria-label="蓝图参考画布，拖动平移，滚轮缩放">
-            <div id="ref-stage" class="ref-stage"><svg id="ref-wires" class="ref-wires" aria-hidden="true"></svg><div id="ref-nodes"></div></div>
+            <div id="ref-marquee" class="ref-marquee" hidden></div><div id="ref-stage" class="ref-stage"><svg id="ref-wires" class="ref-wires" aria-hidden="true"></svg><div id="ref-nodes"></div></div>
             <div id="ref-empty" class="ref-empty">选择卡牌后显示参考图</div>
             <span class="ref-canvas-hint">拖动节点移动 · 空白处平移 · Ctrl/Shift 多选 · Ctrl+C 复制</span>
           </div>
           <div class="ref-navigation" aria-label="画布导航">
             <button id="ref-copy-selected" class="ref-button" type="button" disabled>复制节点 (0)</button>
-            <select id="ref-locate" aria-label="定位节点"><option value="">定位节点…</option></select>
+            <input id="ref-find" type="search" placeholder="查找节点 / Find node" aria-label="搜索当前图节点"><button id="ref-find-prev" class="ref-button" type="button" title="上一个 / Previous">↑</button><button id="ref-find-next" class="ref-button" type="button" title="下一个 / Next">↓</button><span id="ref-find-count" aria-live="polite"></span><select id="ref-locate" aria-label="定位节点"><option value="">定位节点…</option></select>
             <div class="zoom-controls">
               <button id="ref-zoom-out" type="button" aria-label="缩小">−</button>
               <button id="ref-readable" type="button" title="按可读比例显示当前节点"><span id="ref-zoom">100%</span></button>

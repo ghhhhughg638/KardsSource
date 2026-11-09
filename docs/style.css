@@ -2597,3 +2597,11 @@ dialog::backdrop {
 .node input.pin-checkbox, .ref-node input.pin-checkbox { width: 14px; min-width: 14px; max-width: 14px; height: 14px; min-height: 14px; margin: 0 2px; padding: 0; accent-color: #c2c2c2; cursor: pointer; }
 
 .ovr-row.is-event .ovr-icon { color: #f06464; }
+/* Connection editing and compact reroute nodes */
+.edge-handle{pointer-events:all;cursor:crosshair;filter:drop-shadow(0 0 3px #000)}
+.node.ue-reroute{width:48px!important;min-width:48px;height:24px;background:#222;border:1px solid #777;border-radius:12px;overflow:visible}
+.node.ue-reroute .node-head{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:0;height:22px;padding:0 4px;background:#333;border:0;border-radius:12px;cursor:grab}
+.node.ue-reroute .pin{width:10px;height:10px;padding:0;flex-shrink:0;pointer-events:auto}
+#align-nodes{max-width:112px;padding:5px;font-size:10px;background:#292929;border:1px solid #555;color:#ddd}
+@media(max-width:650px){#align-nodes{max-width:75px;font-size:9px}#graph-find{font-size:9px}}
+#edge-handles{z-index:4;pointer-events:none}

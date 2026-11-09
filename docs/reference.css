@@ -191,3 +191,7 @@
 
 .ref-search, .ref-filters select { font-size: 12px; padding: 7px 9px; min-height: 0; background: #1b1b1b; border: 1px solid #424242; border-radius: 2px; }
 @media (max-width: 1024px) { .ref-search, .ref-filters select { font-size: 16px; min-height: 44px; } }
+.ref-marquee{position:absolute;z-index:8;pointer-events:none;border:1px solid #65b2ee;background:#60a9e32e}
+#ref-find{min-width:90px;width:145px;padding:6px;background:#202020;color:#ddd;border:1px solid #555;border-radius:2px}
+#ref-find-count{white-space:nowrap;font-size:10px;color:#bbb}
+@media(max-width:800px){#ref-find{width:95px;min-width:65px}.ref-navigation{flex-wrap:wrap}}

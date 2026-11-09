@@ -1,3 +1,4 @@
+import { disconnectPin, insertReroute, reconnectEdge, alignNodes } from "./graph-edit.js";
 import { CLIP_KEY, CLIP_TAG, nodeClip, importClipDependencies } from "./node-clipboard.js";
 import { pinColor as uePinColor, nodeAppearance, dynamicPinSpec, canRemoveDynamicPin, addDynamicPin, removeDynamicPin, applyUEPalette } from "./ue-node-features.js";
 import { setUiLanguage, tr } from "./ui-i18n.js";
@@ -2018,7 +2019,7 @@ function renderNodes() {
   cullSoon();
   $("nodes").innerHTML = graph()
     .nodes.map(
-      (n) =>
+      (n) => n.definition.reroute ? `<article class="node ue-reroute ${selection.has(n.id) ? "selected" : ""}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px"><div class="node-head" title="重定向 / Reroute · 拖动移动">${n.definition.pins.map((p) => `<button class="pin ${p.type === "exec" ? "exec" : ""} ${pinConnected(n, p) ? "connected" : ""}" data-node="${esc(n.id)}" data-pin="${esc(p.id)}" style="--pin-color:${pinColor(p.type)}" title="${esc(p.name)} · ${esc(p.type)}" aria-label="${esc(p.name)}"></button>`).join("")}</div></article>` :
         `<article class="node ue-${nodeKind(n.definition)} ${nodeAppearance(n.definition, enums).compact ? "ue-compact" : ""} ${nodeAppearance(n.definition, enums).slim ? "ue-slim" : ""} tier-${nodeTier(n.definition)} ${selection.has(n.id) ? "selected" : ""}" data-node-id="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px;--node-color:${color(n.definition)}">${n.comment ? `<div class="node-comment">${esc(n.comment)}</div>` : ""}<div class="node-head" title="${esc(kindLabels[nodeKind(n.definition)] || "FUNCTION")} · ${esc((n.definition.class || "UE").replace(/^[UA](?=[A-Z][a-z])/, ""))}"><div class="node-heading"><span>${icon(n.definition)}</span><strong>${esc(nodeAppearance(n.definition, enums).compact && !n.title ? nodeAppearance(n.definition, enums).title : nodeHeading(n))}</strong></div>${langMode === "both" ? `<div class="node-subtitle">${esc(nodeEnglish(n.definition))}</div>` : ""}</div><div class="node-kind-label">${esc(kindLabels[nodeKind(n.definition)] || "FUNCTION")}<span>${esc((n.definition.class || "UE").replace(/^[UA](?=[A-Z][a-z])/, ""))}</span></div><div class="node-body">${nodeBody(n)}</div></article>`,
     )
     .join("");
@@ -2200,7 +2201,7 @@ function updateSelectionStatus() {
   $("selection-status").textContent = pending
     ? "选择一个兼容端口完成连线 · Esc 取消"
     : selectedEdge
-      ? "已选中连接 · Delete 删除"
+      ? "已选中连接 · 拖动圆点重接 · Delete 删除"
       : selection.size
         ? `已选中 ${selection.size} 个节点`
         : "就绪";
@@ -2499,7 +2500,7 @@ function curve(a, b) {
   return `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`;
 }
 function drawEdges(pointer) {
-  let html = "";
+  let html = "", handles = "";
   for (const e of graph().edges) {
     const a = pinPosition(e.from),
       b = pinPosition(e.to);
@@ -2508,6 +2509,9 @@ function drawEdges(pointer) {
       .nodes.find((n) => n.id === e.from.node)
       ?.definition.pins.find((p) => p.id === e.from.pin);
     html += `<path class="edge ${selectedEdge === e.id ? "selected" : ""}" data-edge="${esc(e.id)}" d="${curve(a, b)}" stroke="${pinColor(pin.type)}"/>`;
+    const dx = Math.max(65, Math.abs(b.x - a.x) * 0.5);
+    const handlePoint = (t) => { const u=1-t; return {x:u*u*u*a.x+3*u*u*t*(a.x+dx)+3*u*t*t*(b.x-dx)+t*t*t*b.x,y:u*u*u*a.y+3*u*u*t*a.y+3*u*t*t*b.y+t*t*t*b.y}; };
+    if (selectedEdge === e.id) for (const [side, point] of [["from",handlePoint(.18)],["to",handlePoint(.82)]]) handles += `<circle class="edge-handle" data-rewire="${side}" data-edge-id="${esc(e.id)}" cx="${point.x}" cy="${point.y}" r="7" fill="${pinColor(pin.type)}" stroke="#fff" stroke-width="2"><title>拖动重连 / Drag to reconnect</title></circle>`;
   }
   if (pending && pointer) {
     const p = pinPosition(pending),
@@ -2518,6 +2522,7 @@ function drawEdges(pointer) {
       html += `<path class="edge ghost" d="${def.direction === "out" ? curve(p, pointer) : curve(pointer, p)}" stroke="${pinColor(def.type)}"/>`;
   }
   $("edges").innerHTML = html;
+  $("edge-handles").innerHTML = handles;
 }
 // Level of detail + culling. Nodes outside the screen are hidden with `visibility` (they keep their
 // layout, so wires still find their pins) and, when zoomed far out, labels/inputs are not painted.
@@ -2872,6 +2877,19 @@ function duplicate() {
     selection = new Set(ids.values());
   });
 }
+// A new wire must never silently invalidate other wires during wildcard inference.
+function syncKeepingConnections(candidate) {
+  const before=candidate.graphs.flatMap(g=>g.edges.map(e=>`${g.id}\u0000${e.id}`));
+  syncDefinitions(candidate);
+  const after=new Set(candidate.graphs.flatMap(g=>g.edges.map(e=>`${g.id}\u0000${e.id}`)));
+  if(before.some(id=>!after.has(id))) throw new Error("连接的类型与现有连线不兼容，请先断开相关连线 / Connection conflicts with existing wires");
+}
+function disconnectEndpoint(endpoint) {
+  const hasLinks=graph().edges.some((e)=>e.from.node===endpoint.node&&e.from.pin===endpoint.pin||e.to.node===endpoint.node&&e.to.pin===endpoint.pin);
+  if(!hasLinks)return false;
+  mutate(()=>{disconnectPin(graph(),endpoint);if(selectedEdge&&!graph().edges.some(e=>e.id===selectedEdge))selectedEdge=null;});
+  return true;
+}
 function tryConnect(a, b) {
   const snapshot = JSON.stringify(project);
   try {
@@ -2882,7 +2900,7 @@ function tryConnect(a, b) {
       updateSelectionStatus();
       return;
     }
-    syncDefinitions(project); // wildcard nodes take the element type of the wire
+    syncKeepingConnections(project); // wildcard nodes take the element type without losing other wires
     checkpoint(snapshot);
     pending = null;
     render();
@@ -2996,6 +3014,7 @@ viewport.addEventListener("mousedown", (e) => {
   }
 });
 // Right mouse button: drag on empty canvas pans (hand cursor); a plain click still opens the node menu.
+let lastEdgeClick = null, ignoreCanvasDoubleClickUntil = 0;
 let rightDragged = false,
   rightDownAt = 0;
 viewport.addEventListener("pointerdown", (e) => {
@@ -3033,10 +3052,26 @@ viewport.addEventListener("pointerdown", (e) => {
     }
     return;
   }
+  const handle = e.target.closest("[data-rewire]");
+  if (handle && e.button === 0) {
+    const edge = graph().edges.find((item) => item.id === handle.dataset.edgeId);
+    if (!edge) return;
+    e.preventDefault();
+    pending = clone(handle.dataset.rewire === "from" ? edge.to : edge.from);
+    drag = { type:"rewire", edgeId:edge.id, side:handle.dataset.rewire, startX:e.clientX, startY:e.clientY };
+    drawEdges(worldPoint(e)); updateSelectionStatus(); return;
+  }
   const pin = e.target.closest(".pin");
   if (pin && e.button === 0) {
     e.preventDefault();
     const endpoint = { node: pin.dataset.node, pin: pin.dataset.pin };
+    if (e.altKey) {
+      pending = null; drag = null;
+      if (disconnectEndpoint(endpoint)) {
+        toast(bi2("已断开引脚连线", "Pin links disconnected"));
+      } else { renderNodes(); drawEdges(); updateSelectionStatus(); }
+      return;
+    }
     if (
       pending &&
       (pending.node !== endpoint.node || pending.pin !== endpoint.pin)
@@ -3053,6 +3088,13 @@ viewport.addEventListener("pointerdown", (e) => {
   }
   const edge = e.target.closest("[data-edge]");
   if (edge && e.button === 0 && !space) {
+    const now=Date.now(), prev=lastEdgeClick;
+    if (prev && prev.id===edge.dataset.edge && now-prev.time<450 && Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<14) {
+      const point=worldPoint(e), id=edge.dataset.edge; lastEdgeClick=null; ignoreCanvasDoubleClickUntil=Date.now()+500;
+      if(graph().nodes.length>=2000 || graph().edges.length>=10000){toast("蓝图已达到节点或连线数量上限",true);return;}
+      mutate(() => { const node=insertReroute(graph(),id,point.x,point.y); if(node) selection=new Set([node.id]); selectedEdge=null; }); return;
+    }
+    lastEdgeClick={id:edge.dataset.edge,time:now,x:e.clientX,y:e.clientY};
     selection.clear();
     selectedEdge = edge.dataset.edge;
     renderNodes();
@@ -3200,7 +3242,20 @@ viewport.addEventListener("pointermove", (e) => {
 });
 window.addEventListener("pointerup", (e) => {
   if (!drag) return;
-  if (drag.type === "wire") {
+  if (drag.type === "rewire") {
+    const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest(".pin");
+    if (hit) {
+      try {
+        const updated=reconnectEdge(graph(),drag.edgeId,drag.side,{node:hit.dataset.node,pin:hit.dataset.pin});
+        if (updated) {
+          const candidate=clone(project),index=candidate.graphs.findIndex((g)=>g.id===candidate.activeGraph);candidate.graphs[index]=updated;
+          syncKeepingConnections(candidate);
+          mutate(() => { project=candidate; });
+        }
+      } catch (error) { toast(error.message,true); }
+    }
+    pending=null; renderNodes(); drawEdges(); updateSelectionStatus();
+  } else if (drag.type === "wire") {
     const hit = document
       .elementFromPoint(e.clientX, e.clientY)
       ?.closest(".pin");
@@ -3261,7 +3316,7 @@ function openPinMenu(target) {
   const p = n.definition.pins.find((p) => p.id === id);
   const connected = graph().edges.some((e) => e.from.node === n.id && e.from.pin === id || e.to.node === n.id && e.to.pin === id);
   openModal(`引脚 · ${p.name}`, `<p>${esc(p.type)}</p><button id="pin-disconnect" class="secondary-button" ${connected ? "" : "disabled"}>断开此引脚的连线</button><button id="pin-remove" class="secondary-button" ${canRemoveDynamicPin(n.definition, id) ? "" : "disabled"}>删除引脚</button><p class="detail-description">可用撤销恢复引脚及连线。固定签名引脚不能删除。</p>`);
-  $("pin-disconnect").onclick = () => { $("modal").close(); mutate(() => { graph().edges = graph().edges.filter((e) => !(e.from.node === n.id && e.from.pin === id || e.to.node === n.id && e.to.pin === id)); }); };
+  $("pin-disconnect").onclick = () => { $("modal").close(); disconnectEndpoint({node:n.id,pin:id}); };
   $("pin-remove").onclick = () => { $("modal").close(); mutate(() => removeDynamicPin(graph(), n, id)); };
   return true;
 }
@@ -3282,6 +3337,7 @@ window.addEventListener("pointerup", (e) => {
   picker(worldPoint(e), pending);
 });
 viewport.addEventListener("dblclick", (e) => {
+  if (Date.now()<ignoreCanvasDoubleClickUntil || e.target.closest("[data-edge]")) return;
   if (!e.target.closest(".node,.minimap-wrap,.canvas-bottom,.empty-state"))
     picker(worldPoint(e), pending);
 });
@@ -3359,6 +3415,11 @@ function buildGraphSVG() {
     const el = document.querySelector(`[data-node-id="${CSS.escape(n.id)}"]`),
       h = el.offsetHeight,
       w = el.offsetWidth;
+    if (n.definition.reroute) {
+      svg += `<g><rect x="${n.x}" y="${n.y}" width="${w}" height="${h}" rx="${h/2}" fill="#333" stroke="${pinColor(n.definition.pins[0].type)}"/>`;
+      for(const p of n.definition.pins){const pos=pinPosition({node:n.id,pin:p.id});if(pos)svg+=`<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#171717" stroke="${pinColor(p.type)}" stroke-width="2"/>`;}
+      svg += "</g>"; continue;
+    }
     svg += `<g font-family="monospace"><rect x="${n.x}" y="${n.y}" width="${w}" height="${h}" rx="6" fill="#171717" stroke="${color(n.definition)}"/><rect x="${n.x + 1}" y="${n.y + 1}" width="${w - 2}" height="57" rx="5" fill="${color(n.definition)}"/><text x="${n.x + 12}" y="${n.y + 24}" fill="#e0e9e2" font-size="12">${esc(n.title || nodeEnglish(n.definition))}</text><text x="${n.x + 12}" y="${n.y + 43}" fill="#eeeeee" font-size="9">${esc(n.title ? nodeEnglish(n.definition) : kindEnglish(n))}</text>`;
     if (n.comment)
       svg += `<text x="${n.x}" y="${n.y - 12}" fill="#a4b69d" font-size="10">${esc(n.comment)}</text>`;
@@ -3548,7 +3609,7 @@ function validate() {
 function help() {
   openModal(
     "设计你的下一张卡牌",
-    `<div class="help-grid"><span>添加节点</span><kbd>Tab / 右键</kbd><span>框选节点</span><kbd>拖动空白（白色框）</kbd><span>平移画布</span><kbd>空格 / 中键 / Alt + 拖动</kbd><span>缩放画布</span><kbd>滚轮 / ＋ −</kbd><span>适应所有节点</span><kbd>F</kbd><span>多选节点</span><kbd>Shift + 单击 / 手机「多选」按钮</kbd><span>全选 / 复制 / 删除</span><kbd>Ctrl A / Ctrl D / Delete</kbd><span>撤销 / 重做</span><kbd>Ctrl Z / Ctrl Shift Z</kbd><span>保存到本地 / 导出文件</span><kbd>Ctrl S / Ctrl Shift S</kbd><span>取消连线 / 取消选择</span><kbd>Esc</kbd></div><p>从一个端口拖向另一个端口，或依次点击两个端口。只有类型相同的输出与输入可以连接。点击连线后按 Delete 可断开。</p><p>修改会自动保存在当前浏览器。使用「导出蓝图」获得文件；更换设备或清除浏览器数据前请先导出。支持 macOS 的 ⌘ 快捷键。</p><div class="format-note">format: "${FORMAT}"\nversion: ${VERSION}\ngraphs: [{ nodes, edges, view }]</div>`,
+    `<div class="help-grid"><span>添加节点</span><kbd>Tab / 右键</kbd><span>框选节点</span><kbd>拖动空白（白色框）</kbd><span>平移画布</span><kbd>空格 / 中键 / Alt + 拖动</kbd><span>缩放画布</span><kbd>滚轮 / ＋ −</kbd><span>适应所有节点</span><kbd>F</kbd><span>断开引脚连线</span><kbd>Alt + 单击引脚</kbd><span>重接已有连线</span><kbd>选中连线后拖动圆点</kbd><span>插入重定向节点</span><kbd>双击连线</kbd><span>查找节点</span><kbd>Ctrl / Cmd + F</kbd><span>多选节点</span><kbd>Shift + 单击 / 手机「多选」按钮</kbd><span>全选 / 复制 / 删除</span><kbd>Ctrl A / Ctrl D / Delete</kbd><span>撤销 / 重做</span><kbd>Ctrl Z / Ctrl Shift Z</kbd><span>保存到本地 / 导出文件</span><kbd>Ctrl S / Ctrl Shift S</kbd><span>取消连线 / 取消选择</span><kbd>Esc</kbd></div><p>从一个端口拖向另一个端口，或依次点击两个端口。只有类型相同的输出与输入可以连接。点击连线后按 Delete 可断开。</p><p>修改会自动保存在当前浏览器。使用「导出蓝图」获得文件；更换设备或清除浏览器数据前请先导出。支持 macOS 的 ⌘ 快捷键。</p><div class="format-note">format: "${FORMAT}"\nversion: ${VERSION}\ngraphs: [{ nodes, edges, view }]</div>`,
   );
 }
 $("node-search").oninput = () => {
@@ -3690,6 +3751,8 @@ const SITE_FILES = [
   "./catalog.json",
   "./engine-events.json",
   "./node-clipboard.js",
+  "./graph-edit.js",
+  "./reference-drafts.js",
   "./reasons.json",
   "./changelog.json",
   "./version.json",
@@ -3750,6 +3813,16 @@ $("backup-input").onchange = (e) => {
   if (file) restoreLocalBackup(file);
 };
 $("arrange").onclick = arrangeNodes;
+
+function openGraphFind() {
+  let found=[], current=-1;
+  openModal("查找节点 / Find nodes", `<input id="find-query" class="modal-search" placeholder="节点名称、类型或注释 / Node name, type or comment"><div id="find-count" class="detail-description"></div><div class="modal-actions"><button id="find-prev" class="secondary-button">↑ 上一个 / Previous</button><button id="find-next" class="primary-button">↓ 下一个 / Next</button></div>`);
+  const update=()=>{const q=$("find-query").value.trim().toLowerCase();found=q?graph().nodes.filter(n=>`${nodeHeading(n)} ${nodeChinese(n.definition)} ${nodeEnglish(n.definition)} ${n.definition.class||""} ${n.comment||""}`.toLowerCase().includes(q)):[];current=-1;$("find-count").textContent=langMode==="en"?`${found.length} matches`:langMode==="zh"?`${found.length} 个匹配`:`${found.length} 个匹配 / ${found.length} matches`;};
+  const go=(step)=>{if(!found.length)return; current=current<0?(step<0?found.length-1:0):(current+step+found.length)%found.length;const n=found[current],v=graph().view,r=viewport.getBoundingClientRect();v.x=r.width/2-(n.x+nodeWidth(n)/2)*v.zoom;v.y=r.height/2-(n.y+40)*v.zoom;selection=new Set([n.id]);selectedEdge=null;render();scheduleSave();$("find-count").textContent=`${current+1} / ${found.length} · ${nodeHeading(n)}`;};
+  $("find-query").oninput=update;$("find-query").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();go(e.shiftKey?-1:1);}};$("find-prev").onclick=()=>go(-1);$("find-next").onclick=()=>go(1);$("find-query").focus();
+}
+$("graph-find").onclick=openGraphFind;
+$("align-nodes").onchange=(e)=>{const mode=e.target.value;e.target.value="";if(!mode)return;const nodes=graph().nodes.filter(n=>selection.has(n.id));const snapshot=JSON.stringify(project);const changed=alignNodes(nodes,mode,n=>{const el=document.querySelector(`[data-node-id="${CSS.escape(n.id)}"]`);return {width:el?.offsetWidth||280,height:el?.offsetHeight||100};});if(!changed){const enough=nodes.length >= (mode.startsWith("distribute") ? 3 : 2);toast(enough?bi2("所选节点已处于该位置", "Nodes already match this arrangement"):bi2("请选择足够数量的节点", "Select enough nodes"),!enough);return;}checkpoint(snapshot);render();persist();};
 $("multi-toggle").onclick = () => setMultiMode(!multiMode);
 $("bar-clear").onclick = () => {
   selection.clear();
@@ -3832,6 +3905,7 @@ window.addEventListener("keydown", (e) => {
     /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) ||
     e.target.isContentEditable;
   if (e.key === "Escape") {
+    if (drag?.type === "rewire") drag = null;
     pending = null;
     selection.clear();
     selectedEdge = null;
@@ -3855,6 +3929,7 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (typing) return;
+  if (mod && e.key.toLowerCase() === "f") { e.preventDefault(); openGraphFind(); return; }
   if (e.key === " ") {
     e.preventDefault();
     space = true;
